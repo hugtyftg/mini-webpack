@@ -254,3 +254,11 @@ loader将非js的文件转成js，使得webpack可以正常解析执行
 设计思想：单一职责、链式调用
 
 # plugin
+
+webpack在不同的阶段会暴露不同的事件hook，我们可以监听这些事件，拿到这些事件触发时暴露出来的对象，利用这些对象上的方法二次加工，从而改变打包时的行为
+
+webpack底层实现了各事件监听的库tapable，它基于发布订阅模式实现
+
+
+- https://juejin.cn/post/7040982789650382855
+- https://tsejx.github.io/webpack-guidebook/infra/implementation-principle/tapable/
