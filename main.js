@@ -4,6 +4,18 @@ import traverse from '@babel/traverse';
 import path from 'path';
 import ejs from 'ejs';
 import { transformFromAst } from 'babel-core';
+import jsonLoader from './jsonLoader.js';
+
+const webpackConfig = {
+  module: {
+    rules: [
+      {
+        test: /\.json/,
+        use: jsonLoader,
+      },
+    ],
+  },
+};
 
 // 标识模块唯一id，不能简单用递增的数字，因为某个模块可能
 function genModuleId(filePath) {
@@ -17,8 +29,16 @@ function genModuleId(filePath) {
 // 读取模块内容和依赖关系
 function createAssets(filePath) {
   // 1.读取文件内容
-  const source = fs.readFileSync(filePath, {
+  let source = fs.readFileSync(filePath, {
     encoding: 'utf-8',
+  });
+
+  // init loaders
+  const loaders = webpackConfig.module.rules;
+  loaders.forEach(({ test, use }) => {
+    if (test.test(filePath)) {
+      source = use(source);
+    }
   });
 
   // 2.构建ast
@@ -59,8 +79,6 @@ function createDependencyGraph(filePath) {
   while (queue.length > 0) {
     const curAssets = queue.shift();
     for (const childPath of curAssets.deps) {
-      console.log(childPath);
-
       const childAssets = createAssets(path.resolve('./assets', childPath));
       // 记录每个assets的模块id mapping
       curAssets.mapping[childPath] = childAssets.id;

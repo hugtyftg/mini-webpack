@@ -243,3 +243,14 @@ function indexjs(require, module) {
   console.log('index');
 }
 ```
+
+# loader
+
+webpack将所有文件都看成模块，并且由于内部解析使用babel，只认识js文件，因此无法解析其他类型的文件，loader正是解决这一问题的
+
+loader将非js的文件转成js，使得webpack可以正常解析执行
+
+
+设计思想：单一职责、链式调用
+
+# plugin
