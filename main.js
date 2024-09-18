@@ -5,6 +5,8 @@ import path from 'path';
 import ejs from 'ejs';
 import { transformFromAst } from 'babel-core';
 import jsonLoader from './jsonLoader.js';
+import { PathPlugin } from './PathPlugin.js';
+import { SyncHook } from 'tapable';
 
 const webpackConfig = {
   module: {
@@ -15,7 +17,41 @@ const webpackConfig = {
       },
     ],
   },
+  plugins: [new PathPlugin()],
 };
+
+const hooks = {
+  emitFile: new SyncHook(['context']),
+};
+
+// 注册plugins
+function initPlugins() {
+  const plugins = webpackConfig.plugins;
+  plugins.forEach((plugin) => {
+    plugin.apply(hooks);
+  });
+}
+
+// loader
+function initLoaders(sourceContent, filePath) {
+  let source = sourceContent;
+  const loaders = webpackConfig.module.rules;
+  // loader里有很多webpack全局上下文方法，plugin也是类似
+  const loaderContext = {
+    addDeps(dep) {
+      console.log(dep);
+    },
+  };
+  loaders.forEach(({ test, use }) => {
+    if (test.test(filePath)) {
+      // chain loaders调用顺序是从右向左
+      use.reverse().forEach((loader) => {
+        source = loader.call(loaderContext, source);
+      });
+    }
+  });
+  return source;
+}
 
 // 标识模块唯一id，不能简单用递增的数字，因为某个模块可能
 function genModuleId(filePath) {
@@ -34,21 +70,7 @@ function createAssets(filePath) {
   });
 
   // init loaders
-  const loaders = webpackConfig.module.rules;
-  // loader里有很多webpack全局上下文方法，plugin也是类似
-  const loaderContext = {
-    addDeps(dep) {
-      console.log(dep);
-    },
-  };
-  loaders.forEach(({ test, use }) => {
-    if (test.test(filePath)) {
-      // chain loaders调用顺序是从右向左
-      use.reverse().forEach((loader) => {
-        source = loader.call(loaderContext, source);
-      });
-    }
-  });
+  source = initLoaders(source, filePath);
 
   // 2.构建ast
   const ast = parser.parse(source, {
@@ -115,9 +137,16 @@ function build(graph, entryPath) {
       entryId: genModuleId(entryPath),
     },
   });
-  fs.writeFileSync('./dist/bundle.js', code);
+  let outputPath = './dist/bundle.js';
+  const context = {
+    changeOutputPath(path) {
+      outputPath = path;
+    },
+  };
+  hooks.emitFile.call(context);
+  fs.writeFileSync(outputPath, code);
 }
-
+initPlugins();
 const graph = createDependencyGraph('./assets/index.js');
 
 build(graph, './assets/index.js');

@@ -248,8 +248,9 @@ function indexjs(require, module) {
 
 webpack将所有文件都看成模块，并且由于内部解析使用babel，只认识js文件，因此无法解析其他类型的文件，loader正是解决这一问题的
 
-loader将非js的文件转成js，使得webpack可以正常解析执行
+loader将非js的文件转成js，使得webpack可以正常解析执行。
 
+输入一个字符串，输出一个字符串
 
 设计思想：单一职责、链式调用
 
@@ -258,6 +259,10 @@ loader将非js的文件转成js，使得webpack可以正常解析执行
 webpack在不同的阶段会暴露不同的事件hook，我们可以监听这些事件，拿到这些事件触发时暴露出来的对象，利用这些对象上的方法二次加工，从而改变打包时的行为
 
 webpack底层实现了各事件监听的库tapable，它基于发布订阅模式实现
+
+plugin是一个类，实现了apply方法，会给webpack各种时机hook注册方法
+
+初始化时注册事件
 
 
 - https://juejin.cn/post/7040982789650382855
