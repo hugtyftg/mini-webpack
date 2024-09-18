@@ -11,7 +11,7 @@ const webpackConfig = {
     rules: [
       {
         test: /\.json/,
-        use: jsonLoader,
+        use: [jsonLoader],
       },
     ],
   },
@@ -35,9 +35,18 @@ function createAssets(filePath) {
 
   // init loaders
   const loaders = webpackConfig.module.rules;
+  // loader里有很多webpack全局上下文方法，plugin也是类似
+  const loaderContext = {
+    addDeps(dep) {
+      console.log(dep);
+    },
+  };
   loaders.forEach(({ test, use }) => {
     if (test.test(filePath)) {
-      source = use(source);
+      // chain loaders调用顺序是从右向左
+      use.reverse().forEach((loader) => {
+        source = loader.call(loaderContext, source);
+      });
     }
   });
 
