@@ -1,0 +1,7 @@
+((map) => { function require(id) { const [fn, mapping] = map[id]; const module =
+{ exports: {}, }; function localRequire(filePath) { const id =
+mapping[filePath]; return require(id); } fn(localRequire, module,
+module.exports); return module.exports; } require(<%- data.entryId%>); })({ <%
+data.graph.forEach(datum => { %> "<%- datum["id"] %>": [function(require,
+module, exports) { <%- datum["code"] %> }, <%-
+JSON.stringify(datum["mapping"])%>], <% }) %> });
